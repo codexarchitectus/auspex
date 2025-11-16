@@ -1,0 +1,22 @@
+{
+  "name": "auspex-webui",
+  "version": "1.0.0",
+  "description": "Auspex SNMP Monitor Web UI and API Server",
+  "main": "webui/server.js",
+  "scripts": {
+    "start": "node webui/server.js",
+    "dev": "node webui/server.js"
+  },
+  "keywords": [
+    "snmp",
+    "monitoring",
+    "network"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3"
+  }
+}

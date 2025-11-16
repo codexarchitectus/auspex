@@ -1,0 +1,23 @@
+# Auspex SNMP Monitor Configuration
+# Copy this file to auspex.conf and update with your actual values
+# IMPORTANT: Never commit auspex.conf to version control!
+
+# Database Configuration
+AUSPEX_DB_HOST=localhost
+AUSPEX_DB_PORT=5432
+AUSPEX_DB_NAME=auspexdb
+AUSPEX_DB_USER=auspex
+AUSPEX_DB_PASSWORD=CHANGE_THIS_PASSWORD
+
+# API Server Configuration
+AUSPEX_API_PORT=8080
+
+# SNMP Poller Configuration
+AUSPEX_POLL_INTERVAL_SECONDS=60       # How often to poll devices (in seconds)
+AUSPEX_MAX_CONCURRENT_POLLS=10        # Maximum number of concurrent SNMP polls
+
+# Setup Instructions:
+# 1. Copy this file: cp auspex.conf.example auspex.conf
+# 2. Edit auspex.conf and set a strong password for AUSPEX_DB_PASSWORD
+# 3. Adjust other settings as needed
+# 4. Set secure permissions: chmod 600 auspex.conf

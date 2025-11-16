@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Target Details</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        #latestBox, #statsBox, #configBox, #chartBox {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        h3 { margin-top: 0; }
+        .button {
+            padding: 8px 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+        .button-danger { background: #e74c3c; }
+        input, select {
+            padding: 6px;
+            margin: 4px 0;
+            width: 280px;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+<h2>Target Details</h2>
+<div><a href="index.html">← Back to Targets</a></div>
+
+<div id="configBox">
+    <h3>Configuration</h3>
+    <div id="configForm"></div>
+    <button class="button" onclick="saveTarget()">Save Changes</button>
+    <button class="button button-danger" onclick="deleteTarget()">Delete Target</button>
+</div>
+
+<div id="latestBox">
+    <h3>Latest Poll</h3>
+    <pre id="latestText">Loading...</pre>
+</div>
+
+<div id="statsBox">
+    <h3>Last Hour Statistics</h3>
+    <pre id="statsText">Loading...</pre>
+</div>
+
+<div id="chartBox">
+    <h3>Latency Over Last Hour</h3>
+    <canvas id="latencyChart"></canvas>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const targetId = params.get("id");
+
+// ---------------- Load Target Configuration ----------------
+async function loadConfig() {
+    const res = await fetch(`/api/targets/${targetId}/info`);
+    const t = await res.json();
+
+    document.getElementById("configForm").innerHTML = `
+        Name:<br><input id="name" value="${t.name}"><br>
+        Host:<br><input id="host" value="${t.host}"><br>
+        Port:<br><input id="port" value="${t.port}"><br>
+        Community:<br><input id="community" value="${t.community}"><br>
+        SNMP Version:<br>
+        <select id="snmp_version">
+            <option value="2c" ${t.snmp_version === "2c" ? "selected" : ""}>2c</option>
+        </select><br>
+        Enabled:
+        <select id="enabled">
+            <option value="true" ${t.enabled ? "selected" : ""}>True</option>
+            <option value="false" ${!t.enabled ? "selected" : ""}>False</option>
+        </select><br>
+    `;
+}
+
+async function saveTarget() {
+    const body = {
+        name: document.getElementById("name").value,
+        host: document.getElementById("host").value,
+        port: parseInt(document.getElementById("port").value),
+        community: document.getElementById("community").value,
+        snmp_version: document.getElementById("snmp_version").value,
+        enabled: document.getElementById("enabled").value === "true"
+    };
+
+    await fetch(`/api/targets/${targetId}/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    });
+
+    alert("Saved.");
+    loadConfig();
+}
+
+// ---------------- Delete Target ----------------
+async function deleteTarget() {
+    if (!confirm("Delete this target?")) return;
+
+    await fetch(`/api/targets/${targetId}/delete`, { method: "DELETE" });
+    alert("Target deleted.");
+    window.location = "index.html";
+}
+
+// ---------------- Latest Poll ----------------
+async function loadLatest() {
+    const res = await fetch(`/api/targets/${targetId}/latest`);
+    const data = await res.json();
+    document.getElementById("latestText").textContent = JSON.stringify(data, null, 2);
+}
+
+// ---------------- Stats ----------------
+async function loadStats() {
+    const res = await fetch(`/api/targets/${targetId}/stats`);
+    const s = await res.json();
+
+    let uptime = "N/A";
+    if (s.total_count > 0) {
+        uptime = ((s.up_count / s.total_count) * 100).toFixed(1) + "%";
+    }
+
+    const text =
+`Min Latency: ${s.min_latency ?? "N/A"} ms
+Max Latency: ${s.max_latency ?? "N/A"} ms
+Avg Latency: ${s.avg_latency ? parseFloat(s.avg_latency).toFixed(1) : "N/A"} ms
+Uptime Last Hour: ${uptime}`;
+
+    document.getElementById("statsText").textContent = text;
+}
+
+// ---------------- Latency Chart ----------------
+let chart;
+
+async function loadChart() {
+    const res = await fetch(`/api/targets/${targetId}/latency`);
+    const data = await res.json();
+
+    const labels = data.map(r => new Date(r.polled_at).toLocaleTimeString());
+    const values = data.map(r => r.latency_ms);
+
+    if (chart) chart.destroy();
+
+    const ctx = document.getElementById("latencyChart").getContext("2d");
+    chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels,
+            datasets: [{
+                label: "Latency (ms)",
+                data: values,
+                borderColor: "#3498db",
+                borderWidth: 2
+            }]
+        }
+    });
+}
+
+// ---------------- Auto-refresh every 10 seconds ----------------
+function refresh() {
+    loadLatest();
+    loadStats();
+    loadChart();
+}
+
+loadConfig();
+refresh();
+setInterval(refresh, 10000);
+</script>
+
+</body>
+</html>

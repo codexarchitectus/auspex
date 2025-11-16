@@ -1,0 +1,6 @@
+name,host,port,community,snmp_version,enabled
+Office-Router,192.168.1.1,161,public,2c,true
+Core-Switch,192.168.1.2,161,public,2c,true
+Backup-Firewall,192.168.1.254,161,private,2c,true
+Server-Room-Switch,10.0.10.1,161,monitoring,2c,true
+Guest-WiFi-AP,192.168.100.1,161,public,2c,true

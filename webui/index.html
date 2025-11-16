@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auspex Target Status</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; }
+        .green { background-color: #2ecc71; }
+        .red { background-color: #e74c3c; }
+        .gray { background-color: #bdc3c7; }
+
+        table { border-collapse: collapse; width: 100%; }
+        th, td { padding: 8px; border-bottom: 1px solid #ddd; }
+        button { padding: 4px 8px; margin-right: 4px; }
+        form { margin-top: 30px; padding: 15px; border: 1px solid #ccc; width: 350px; }
+        form div { margin-bottom: 10px; }
+        label { display: block; font-weight: bold; margin-bottom: 4px; }
+        input[type=text], input[type=number] { width: 100%; padding: 6px; }
+        footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<h2>Auspex Targets</h2>
+
+<table id="targetsTable">
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Name</th>
+            <th>Host</th>
+            <th>Port</th>
+            <th>Enabled</th>
+            <th>Last Poll</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<!-- Add Target Form -->
+<h3>Add New Target</h3>
+<form id="addTargetForm">
+    <div><label>Name</label><input type="text" id="t_name" required></div>
+    <div><label>Host</label><input type="text" id="t_host" required placeholder="192.168.1.1"></div>
+    <div><label>Port</label><input type="number" id="t_port" value="161"></div>
+    <div><label>Community</label><input type="text" id="t_community" value="public"></div>
+    <div><label>SNMP Version</label><input type="text" id="t_snmp_version" value="2c"></div>
+    <div><label>Enabled</label><input type="checkbox" id="t_enabled" checked></div>
+    <button type="submit">Add Target</button>
+</form>
+
+<!-- Edit Panel -->
+<div id="editPanel" style="display:none; margin-top:30px; padding:15px; border:1px solid #666; width:350px;">
+    <h3>Edit Target</h3>
+    <input type="hidden" id="edit_id">
+
+    <div><label>Name</label><input type="text" id="edit_name"></div>
+    <div><label>Host</label><input type="text" id="edit_host"></div>
+    <div><label>Port</label><input type="number" id="edit_port"></div>
+    <div><label>Community</label><input type="text" id="edit_community"></div>
+    <div><label>SNMP Version</label><input type="text" id="edit_snmp_version"></div>
+    <div><label>Enabled</label><input type="checkbox" id="edit_enabled"></div>
+
+    <button onclick="saveEdit()">Save</button>
+    <button onclick="closeEdit()">Cancel</button>
+</div>
+
+<!-- Bulk Import -->
+<h3>Bulk Import Targets (CSV)</h3>
+<input type="file" id="csvfile" accept=".csv">
+<button onclick="bulkImport()">Import CSV</button>
+
+<script>
+async function loadTargets() {
+    const res = await fetch("/api/targets");
+    const data = await res.json();
+    const tbody = document.querySelector("#targetsTable tbody");
+    tbody.innerHTML = "";
+
+    const now = Date.now();
+
+    data.forEach(t => {
+        let color = "gray";
+        if (t.polled_at) {
+            const age = (now - new Date(t.polled_at)) / 60000;
+            if (t.status === "up" && age < 5) color = "green";
+            else color = "red";
+        }
+
+        const row = `
+            <tr onclick="window.location='target.html?id=${t.id}'" style="cursor:pointer;">
+                <td><span class="dot ${color}"></span></td>
+                <td>${t.name}</td>
+                <td>${t.host}</td>
+                <td>${t.port}</td>
+                <td>${t.enabled}</td>
+                <td>${t.polled_at || ""}</td>
+                <td onclick="event.stopPropagation();">
+                    <button onclick="openEdit(${t.id}, '${t.name}', '${t.host}', ${t.port}, '${t.community}', '${t.snmp_version}', ${t.enabled})">Edit</button>
+                    <button onclick="deleteTarget(${t.id})">Delete</button>
+                </td>
+            </tr>`;
+        tbody.innerHTML += row;
+    });
+}
+
+async function addTarget(e) {
+    e.preventDefault();
+
+    const payload = {
+        name: document.getElementById("t_name").value,
+        host: document.getElementById("t_host").value,
+        port: parseInt(document.getElementById("t_port").value),
+        community: document.getElementById("t_community").value,
+        snmp_version: document.getElementById("t_snmp_version").value,
+        enabled: document.getElementById("t_enabled").checked
+    };
+
+    const res = await fetch("/api/targets", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) return alert("Error adding target: " + (await res.text()));
+
+    addTargetForm.reset();
+    document.getElementById("t_port").value = 161;
+    document.getElementById("t_community").value = "public";
+    document.getElementById("t_snmp_version").value = "2c";
+    document.getElementById("t_enabled").checked = true;
+
+    loadTargets();
+}
+
+function openEdit(id, name, host, port, community, snmp, enabled) {
+    document.getElementById("edit_id").value = id;
+    document.getElementById("edit_name").value = name;
+    document.getElementById("edit_host").value = host;
+    document.getElementById("edit_port").value = port;
+    document.getElementById("edit_community").value = community;
+    document.getElementById("edit_snmp_version").value = snmp;
+    document.getElementById("edit_enabled").checked = enabled;
+
+    document.getElementById("editPanel").style.display = "block";
+}
+
+function closeEdit() {
+    document.getElementById("editPanel").style.display = "none";
+}
+
+async function saveEdit() {
+    const id = document.getElementById("edit_id").value;
+    const payload = {
+        name: document.getElementById("edit_name").value,
+        host: document.getElementById("edit_host").value,
+        port: parseInt(document.getElementById("edit_port").value),
+        community: document.getElementById("edit_community").value,
+        snmp_version: document.getElementById("edit_snmp_version").value,
+        enabled: document.getElementById("edit_enabled").checked
+    };
+
+    const res = await fetch(`/api/targets/${id}`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) return alert("Error updating target: " + (await res.text()));
+
+    closeEdit();
+    loadTargets();
+}
+
+async function deleteTarget(id) {
+    if (!confirm("Disable this target?")) return;
+    await fetch(`/api/targets/${id}`, { method: "DELETE" });
+    loadTargets();
+}
+
+async function bulkImport() {
+    const file = document.getElementById("csvfile").files[0];
+    if (!file) return alert("Select a CSV file.");
+
+    const text = await file.text();
+    const lines = text.trim().split("\n");
+
+    for (const line of lines) {
+        const [name, host, port, community, version, enabled] = line.split(",");
+        const payload = {
+            name: name.trim(),
+            host: host.trim(),
+            port: parseInt(port.trim()),
+            community: community.trim(),
+            snmp_version: version.trim(),
+            enabled: enabled.trim().toLowerCase() === "true"
+        };
+        await fetch("/api/targets", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+        });
+    }
+
+    alert("Bulk import complete.");
+    loadTargets();
+}
+
+document.getElementById("addTargetForm").addEventListener("submit", addTarget);
+
+loadTargets();
+setInterval(loadTargets, 5000);
+</script>
+
+<footer>
+    <a href="user-guide.html">User Guide</a>
+</footer>
+
+</body>
+</html>
