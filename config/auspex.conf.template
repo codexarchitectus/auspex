@@ -1,0 +1,106 @@
+# Auspex SNMP Monitor Configuration Template
+# ====================================
+# Copy this file to auspex.conf and fill in your values
+
+# ======================================================================
+# DATABASE SETTINGS
+# ======================================================================
+AUSPEX_DB_HOST=localhost
+AUSPEX_DB_PORT=5432
+AUSPEX_DB_NAME=auspexdb
+AUSPEX_DB_USER=auspex
+AUSPEX_DB_PASSWORD=yourpassword
+
+# ======================================================================
+# API SERVER SETTINGS
+# ======================================================================
+AUSPEX_API_PORT=8080
+
+# ======================================================================
+# POLLER SETTINGS
+# ======================================================================
+AUSPEX_POLL_INTERVAL_SECONDS=60
+AUSPEX_MAX_CONCURRENT_POLLS=10
+
+# ======================================================================
+# ALERTING ENGINE SETTINGS
+# ======================================================================
+
+# Enable/disable alerting engine
+AUSPEX_ALERTER_ENABLED=true
+
+# How often to check for alert conditions (in seconds)
+# Default: 30 seconds
+AUSPEX_ALERTER_CHECK_INTERVAL_SECONDS=30
+
+# De-duplication window - don't send duplicate alerts within this time (in minutes)
+# Default: 15 minutes
+AUSPEX_ALERTER_DEDUP_WINDOW_MINUTES=15
+
+# ======================================================================
+# EMAIL (SMTP) SETTINGS
+# For standard email alerts and Slack email-to-channel
+# ======================================================================
+
+# SMTP server settings
+AUSPEX_SMTP_HOST=smtp.gmail.com
+AUSPEX_SMTP_PORT=587
+AUSPEX_SMTP_USER=your-email@gmail.com
+AUSPEX_SMTP_PASSWORD=your-app-password
+
+# Email sender address
+AUSPEX_SMTP_FROM=auspex-alerts@yourdomain.com
+
+# ======================================================================
+# PAGERDUTY SETTINGS
+# Integration key from PagerDuty Events API v2
+# ======================================================================
+
+# PagerDuty integration key (optional - can be configured per channel in DB)
+# Get this from: PagerDuty > Services > Your Service > Integrations > Events API v2
+AUSPEX_PAGERDUTY_INTEGRATION_KEY=
+
+# ======================================================================
+# CONFIGURATION INSTRUCTIONS
+# ======================================================================
+
+# 1. Copy this template:
+#    cp config/auspex.conf.template config/auspex.conf
+#
+# 2. DATABASE: Update AUSPEX_DB_PASSWORD with your PostgreSQL password
+#
+# 3. EMAIL: Configure SMTP settings for email alerts
+#    - Gmail: Use app-specific password (https://myaccount.google.com/apppasswords)
+#    - Office 365: smtp-mail.outlook.com:587
+#    - Custom SMTP: Update host, port, user, password
+#
+# 4. PAGERDUTY: (Optional) Set integration key or configure per channel via API
+#    - Create a service in PagerDuty
+#    - Add "Events API v2" integration
+#    - Copy the integration key
+#
+# 5. SLACK: Configure via alert channel in database
+#    - Get your channel's email address: Slack > Channel Settings > Integrations > Email
+#    - Example: my-alerts-channel@myworkspace.slack.com
+#    - Use SMTP settings to send emails to this address
+#
+# 6. SECURITY: Set proper file permissions
+#    chmod 600 config/auspex.conf
+
+# ======================================================================
+# EXAMPLES
+# ======================================================================
+
+# Gmail Example:
+# AUSPEX_SMTP_HOST=smtp.gmail.com
+# AUSPEX_SMTP_PORT=587
+# AUSPEX_SMTP_USER=myaccount@gmail.com
+# AUSPEX_SMTP_PASSWORD=abcd efgh ijkl mnop
+# AUSPEX_SMTP_FROM=auspex-alerts@mycompany.com
+
+# Office 365 Example:
+# AUSPEX_SMTP_HOST=smtp-mail.outlook.com
+# AUSPEX_SMTP_PORT=587
+# AUSPEX_SMTP_USER=myaccount@outlook.com
+# AUSPEX_SMTP_PASSWORD=mypassword
+# AUSPEX_SMTP_FROM=auspex-alerts@mycompany.com

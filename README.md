@@ -11,6 +11,7 @@ A lightweight, real-time SNMP monitoring system for network devices with a web d
 - ✅ **PostgreSQL backend** - Reliable data storage with performance indexes
 - ✅ **Concurrent polling** - Efficiently monitors multiple devices simultaneously
 - ✅ **Auto-refresh** - Dashboard updates every 5 seconds without page reload
+- 🆕 **Alerting engine** - PagerDuty, Slack, and email notifications with suppression scheduling
 
 ## Quick Start
 
@@ -63,19 +64,22 @@ curl -X POST http://localhost:8080/api/targets \
 └────────┬────────┘
          │ HTTP
          ▼
-┌─────────────────┐      ┌──────────────┐
-│  Express API    │◄────►│  PostgreSQL  │
-│  (Node.js)      │      │   Database   │
-│  Port 8080      │      └──────────────┘
-└─────────────────┘
-         ▲
-         │ SQL Queries
-         │
-┌─────────────────┐      ┌──────────────┐
-│  SNMP Poller    │─────►│   Network    │
-│  (Go daemon)    │ SNMP │   Devices    │
-│  60s interval   │      │ (UDP:161)    │
-└─────────────────┘      └──────────────┘
+┌─────────────────┐      ┌──────────────┐      ┌──────────────────┐
+│  Express API    │◄────►│  PostgreSQL  │◄────►│ Alert Engine     │
+│  (Node.js)      │      │   Database   │      │ (Go daemon)      │
+│  Port 8080      │      └──────────────┘      │ 30s check        │
+└─────────────────┘               ▲            └────────┬─────────┘
+         ▲                        │                     │
+         │ SQL Queries            │                     ▼
+         │                        │            ┌──────────────────┐
+┌─────────────────┐               │            │ PagerDuty/Slack  │
+│  SNMP Poller    │───────────────┘            │ Email/Webhooks   │
+│  (Go daemon)    │                            └──────────────────┘
+│  60s interval   │      ┌──────────────┐
+└─────────────────┘─────►│   Network    │
+                   SNMP  │   Devices    │
+                         │ (UDP:161)    │
+                         └──────────────┘
 ```
 
 ## Components
@@ -86,6 +90,7 @@ curl -X POST http://localhost:8080/api/targets \
 | **API Server** | Node.js + Express | REST API and static file serving |
 | **Database** | PostgreSQL | Stores targets and poll history |
 | **Web UI** | HTML + JavaScript + Chart.js | Real-time dashboard with graphs |
+| **Alerter** 🆕 | Go + net/smtp + http | Monitors status changes, sends notifications |
 
 ## Documentation
 
@@ -98,6 +103,8 @@ curl -X POST http://localhost:8080/api/targets \
 📕 **[PRODUCTION-READY.md](PRODUCTION-READY.md)** - Security hardening, backups, systemd services
 
 📙 **[DATABASE-SETUP.md](DATABASE-SETUP.md)** - Database configuration and troubleshooting
+
+🆕 **[ALERTING-SETUP.md](ALERTING-SETUP.md)** - Configure PagerDuty, Slack, email alerts with suppression schedules
 
 ### Quick References
 
