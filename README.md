@@ -12,20 +12,39 @@ A lightweight, real-time SNMP monitoring system for network devices with a web d
 - ✅ **Concurrent polling** - Efficiently monitors multiple devices simultaneously
 - ✅ **Auto-refresh** - Dashboard updates every 5 seconds without page reload
 
+## Installation
+
+**New to Auspex?** Start with the comprehensive installation guide:
+
+📦 **[INSTALLATION.md](INSTALLATION.md)** - Complete step-by-step installation from scratch
+
+**Quick Install (Ubuntu/Debian):**
+```bash
+# Install dependencies
+sudo apt update && sudo apt install -y postgresql golang nodejs npm
+
+# Clone repository
+git clone https://github.com/codexarchitectus/auspex.git
+cd auspex
+
+# Setup database
+./setup-database.sh
+
+# Install dependencies
+npm install --prefix webui
+go mod download
+
+# Start services (in separate terminals)
+export $(cat config/auspex.conf | xargs)
+go run cmd/poller/main.go        # Terminal 1
+node webui/server.js             # Terminal 2
+```
+
+**Access Dashboard:** http://localhost:8080
+
+---
+
 ## Quick Start
-
-### Current Status ✓
-
-Your Auspex installation is **ready to use**:
-
-- ✓ PostgreSQL database configured (localhost:5432)
-- ✓ SNMP poller running (60-second intervals)
-- ✓ Web API server running (http://localhost:8080)
-- ✓ Sample data removed - clean slate for real targets
-
-### Access Dashboard
-
-**Open in your browser:** http://localhost:8080
 
 ### Add Your First Device
 
@@ -89,17 +108,32 @@ curl -X POST http://localhost:8080/api/targets \
 
 ## Documentation
 
-### Essential Guides
+### Getting Started
 
-📘 **[GETTING-STARTED.md](GETTING-STARTED.md)** - Start here! Adding targets, viewing results, managing services
+📦 **[INSTALLATION.md](INSTALLATION.md)** - Complete installation guide from scratch
+
+📘 **[GETTING-STARTED.md](GETTING-STARTED.md)** - Adding targets, viewing results, managing services
 
 📗 **[SNMP-DEVICE-SETUP.md](SNMP-DEVICE-SETUP.md)** - Configure SNMP on routers, switches, servers, firewalls
+
+### Operations & Deployment
 
 📕 **[PRODUCTION-READY.md](PRODUCTION-READY.md)** - Security hardening, backups, systemd services
 
 📙 **[DATABASE-SETUP.md](DATABASE-SETUP.md)** - Database configuration and troubleshooting
 
-### Quick References
+### Development & Planning
+
+🗺️ **[ROADMAP.md](ROADMAP.md)** - Project roadmap and planned features
+
+📖 **[CODEBASE-SUMMARY.md](CODEBASE-SUMMARY.md)** - Architecture and code reference for developers
+
+📋 **Feature Proposals:**
+- [SNMP MIB Database](docs/SNMP-MIB-DATABASE-PROPOSAL.md) - Device-specific OID monitoring
+- [ICMP Ping Polling](docs/ICMP-POLLING-PROPOSAL.md) - Alternative polling via ping
+- [Splunk HEC Integration](SPLUNK-HEC-IMPLEMENTATION-PLAN.md) - Export to Splunk
+
+### Helper Scripts
 
 - **add-target.sh** - Interactive script to add devices
 - **targets-template.csv** - CSV template for bulk import
@@ -107,10 +141,15 @@ curl -X POST http://localhost:8080/api/targets \
 
 ## System Requirements
 
-- **PostgreSQL** 12+ (installed ✓)
-- **Go** 1.18+ (installed ✓)
-- **Node.js** 16+ (installed ✓)
+- **PostgreSQL** 12 or higher
+- **Go** 1.18 or higher
+- **Node.js** 16 or higher
 - **Network access** to SNMP devices (UDP port 161)
+
+**Supported Platforms:**
+- Linux (Ubuntu 20.04+, Debian 11+, CentOS/RHEL 8+)
+- macOS 11+
+- Windows 10+ (via WSL2)
 
 ## Supported Devices
 
@@ -225,7 +264,7 @@ psql -U auspex -d auspexdb -c "
 kill <poller_pid> <api_pid>
 
 # Start poller
-cd /Users/mcclainje/Documents/Code/auspex
+cd /path/to/auspex
 export $(cat config/auspex.conf | xargs)
 go run cmd/poller/main.go &
 
@@ -233,6 +272,8 @@ go run cmd/poller/main.go &
 export $(cat config/auspex.conf | xargs)
 node webui/server.js &
 ```
+
+For production deployments with systemd, see [PRODUCTION-READY.md](PRODUCTION-READY.md).
 
 ## Performance
 
@@ -298,17 +339,57 @@ auspex/
 - **Frontend:** Vanilla JavaScript, Chart.js
 - **Protocol:** SNMPv2c (gosnmp library)
 
+## Roadmap & Future Features
+
+Auspex is actively developed with several exciting features planned:
+
+### 🚀 Planned Features (High Priority)
+
+- **SNMP MIB Database** - Device-specific OID groups and templates
+- **ICMP Ping Polling** - Alternative polling via ping (no SNMP required)
+- **Splunk HEC Integration** - Export metrics to Splunk
+
+### 🔮 Under Consideration
+
+- Alerting & Notifications (email, SMS, webhooks)
+- User Authentication & Authorization
+- SNMPv3 Support (encrypted polling)
+- Advanced Dashboards & Reporting
+- Mobile Application
+- Multi-Tenancy
+
+See **[ROADMAP.md](ROADMAP.md)** for complete roadmap and detailed feature proposals.
+
+---
+
+## Contributing
+
+Contributions are welcome! Whether it's bug reports, feature requests, or code contributions.
+
+**How to Contribute:**
+1. Check the [ROADMAP.md](ROADMAP.md) for planned features
+2. Open an issue to discuss your idea
+3. Fork the repository
+4. Create a feature branch
+5. Submit a pull request
+
+---
+
 ## License
 
-MIT
+MIT License - see LICENSE file for details
+
+---
 
 ## Support
 
-**Documentation:**
+**📚 Documentation:**
+- [INSTALLATION.md](INSTALLATION.md) - Installation guide
 - [GETTING-STARTED.md](GETTING-STARTED.md) - Usage guide
 - [SNMP-DEVICE-SETUP.md](SNMP-DEVICE-SETUP.md) - Device configuration
 - [PRODUCTION-READY.md](PRODUCTION-READY.md) - Production deployment
 - [DATABASE-SETUP.md](DATABASE-SETUP.md) - Database help
+- [CODEBASE-SUMMARY.md](CODEBASE-SUMMARY.md) - Developer reference
 
 **Check status:**
 ```bash
@@ -318,14 +399,22 @@ psql -U auspex -d auspexdb -c "SELECT COUNT(*) FROM targets WHERE enabled = true
 curl -s http://localhost:8080/api/targets | grep -c '"id"'
 ```
 
+**🐛 Issues & Bug Reports:**
+- GitHub Issues: https://github.com/codexarchitectus/auspex/issues
+
+**💬 Community:**
+- GitHub Discussions: https://github.com/codexarchitectus/auspex/discussions
+
 ---
 
-**Ready to monitor your network?**
+## Getting Started Checklist
 
-1. Read [GETTING-STARTED.md](GETTING-STARTED.md)
-2. Configure SNMP on your devices ([SNMP-DEVICE-SETUP.md](SNMP-DEVICE-SETUP.md))
-3. Add targets with `./add-target.sh`
-4. View dashboard at http://localhost:8080
-5. Secure your installation ([PRODUCTION-READY.md](PRODUCTION-READY.md))
+Ready to monitor your network? Follow these steps:
 
-Happy monitoring! 🎯
+1. ✅ **Install Auspex** - Follow [INSTALLATION.md](INSTALLATION.md)
+2. ✅ **Configure SNMP** - See [SNMP-DEVICE-SETUP.md](SNMP-DEVICE-SETUP.md) for your devices
+3. ✅ **Add Targets** - Use `./add-target.sh` or the web UI
+4. ✅ **View Dashboard** - Open http://localhost:8080
+5. ✅ **Secure Installation** - Follow [PRODUCTION-READY.md](PRODUCTION-READY.md)
+
+**Happy monitoring! 🎯**
