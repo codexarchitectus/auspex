@@ -73,6 +73,30 @@ SELECT COUNT(*) FROM poll_results;
 \q
 ```
 
+### 4. (Optional) Initialize Alerting Schema
+
+If you want to use the alerting engine (PagerDuty, Slack, Email notifications), initialize the alerting tables:
+
+```bash
+# Run the alerting schema script
+psql -U auspex -d auspexdb -f db-alerting-schema.sql
+```
+
+This creates additional tables:
+- `alert_channels` - Notification channel configurations
+- `alert_rules` - Per-target alert rules
+- `alert_history` - Alert firing history
+- `alert_deliveries` - Notification delivery logs
+- `alert_suppressions` - Maintenance window schedules
+- `alert_state` - De-duplication state tracking
+
+**Verify alerting tables:**
+```bash
+psql -U auspex -d auspexdb -c "\dt alert*"
+```
+
+**See [ALERTING-SETUP.md](ALERTING-SETUP.md) for complete alerting configuration guide.**
+
 ## Configuration File
 
 Edit `/Users/mcclainje/Documents/Code/auspex/config/auspex.conf`:
