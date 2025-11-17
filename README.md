@@ -28,20 +28,32 @@ sudo apt update && sudo apt install -y postgresql golang nodejs npm
 git clone https://github.com/codexarchitectus/auspex.git
 cd auspex
 
+# Create config file from template
+cp config/auspex.conf.template config/auspex.conf
+chmod 600 config/auspex.conf
+nano config/auspex.conf  # Edit database password
+
 # Setup database
 ./setup-database.sh
 
-# Install dependencies
-npm install --prefix webui
-go mod download
+# Install Node.js dependencies
+cd webui && npm install && cd ..
 
 # Start services (in separate terminals)
-export $(cat config/auspex.conf | xargs)
+export $(grep -v '^#' config/auspex.conf | xargs)
 go run cmd/poller/main.go        # Terminal 1
-node webui/server.js             # Terminal 2
+go run cmd/alerter/main.go       # Terminal 2 (alerting engine)
+node webui/server.js             # Terminal 3
 ```
 
 **Access Dashboard:** http://localhost:8080
+
+**Production Deployment:**
+```bash
+# Automated systemd installation
+sudo ./install-systemd-services.sh
+sudo systemctl start auspex-poller auspex-alerter auspex-api
+```
 
 ---
 
@@ -343,6 +355,35 @@ See [PRODUCTION-READY.md](PRODUCTION-READY.md) for complete security checklist.
 
 ## Troubleshooting
 
+### Setup Issues
+
+**"config/auspex.conf: No such file or directory"**
+```bash
+cp config/auspex.conf.template config/auspex.conf
+chmod 600 config/auspex.conf
+```
+
+**"password authentication failed for user postgres"**
+- The `setup-database.sh` script uses peer authentication (no password required)
+- Just enter your sudo password, not the PostgreSQL password
+
+**"failed to ping DB: pq: password authentication failed for user auspex"**
+```bash
+# Load environment variables before starting services
+export $(grep -v '^#' config/auspex.conf | xargs)
+go run cmd/poller/main.go
+```
+
+**"listen EADDRINUSE :::8080"**
+```bash
+# Find process using port 8080
+sudo lsof -i :8080
+# Kill the process
+sudo kill <PID>
+# Or use a different port
+AUSPEX_API_PORT=3000 node webui/server.js
+```
+
 ### Device shows "down" but it's online
 
 1. Test SNMP manually: `snmpwalk -v 2c -c public DEVICE_IP system`
@@ -358,6 +399,12 @@ See [SNMP-DEVICE-SETUP.md](SNMP-DEVICE-SETUP.md) for device configuration help.
 2. Check database has recent polls: `SELECT MAX(polled_at) FROM poll_results;`
 3. Hard refresh browser (Cmd+Shift+R)
 4. Check browser console for errors
+
+### Remove demo targets
+
+```bash
+PGPASSWORD='yourpassword' psql -h localhost -U auspex -d auspexdb -c "DELETE FROM targets;"
+```
 
 ## Development
 

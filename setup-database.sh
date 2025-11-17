@@ -6,7 +6,14 @@
 set -e  # Exit on error
 
 # Load configuration
-CONFIG_FILE="/Users/mcclainje/Documents/Code/auspex/config/auspex.conf"
+# Try multiple config file locations
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="${SCRIPT_DIR}/config/auspex.conf"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    CONFIG_FILE="${SCRIPT_DIR}/auspex.conf"
+fi
+
 if [ -f "$CONFIG_FILE" ]; then
     export $(grep -v '^#' "$CONFIG_FILE" | xargs)
 else
@@ -53,9 +60,9 @@ echo
 
 # Step 1: Create database user if it doesn't exist
 echo "Step 1: Creating database user '$AUSPEX_DB_USER' (if needed)..."
-psql -h "$AUSPEX_DB_HOST" -p "$AUSPEX_DB_PORT" -U postgres -tc \
+sudo -u postgres psql -tc \
     "SELECT 1 FROM pg_user WHERE usename = '$AUSPEX_DB_USER'" | grep -q 1 || \
-    psql -h "$AUSPEX_DB_HOST" -p "$AUSPEX_DB_PORT" -U postgres -c \
+    sudo -u postgres psql -c \
     "CREATE USER $AUSPEX_DB_USER WITH PASSWORD '$AUSPEX_DB_PASSWORD';"
 
 echo "User created or already exists."
@@ -63,9 +70,9 @@ echo
 
 # Step 2: Create database if it doesn't exist
 echo "Step 2: Creating database '$AUSPEX_DB_NAME' (if needed)..."
-psql -h "$AUSPEX_DB_HOST" -p "$AUSPEX_DB_PORT" -U postgres -tc \
+sudo -u postgres psql -tc \
     "SELECT 1 FROM pg_database WHERE datname = '$AUSPEX_DB_NAME'" | grep -q 1 || \
-    psql -h "$AUSPEX_DB_HOST" -p "$AUSPEX_DB_PORT" -U postgres -c \
+    sudo -u postgres psql -c \
     "CREATE DATABASE $AUSPEX_DB_NAME OWNER $AUSPEX_DB_USER;"
 
 echo "Database created or already exists."
@@ -73,7 +80,7 @@ echo
 
 # Step 3: Run schema initialization
 echo "Step 3: Initializing database schema..."
-SQL_FILE="/Users/mcclainje/Documents/Code/auspex/db-init-new.sql"
+SQL_FILE="${SCRIPT_DIR}/db-init-new.sql"
 
 if [ ! -f "$SQL_FILE" ]; then
     echo "Error: SQL initialization file not found at $SQL_FILE"
