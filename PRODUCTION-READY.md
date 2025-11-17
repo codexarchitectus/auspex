@@ -255,10 +255,77 @@ echo "Deleted poll results older than 90 days"
 </plist>
 ```
 
-**Load services:**
+**Alerter service (`~/Library/LaunchAgents/com.auspex.alerter.plist`):** (Optional)
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.auspex.alerter</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/go</string>
+        <string>run</string>
+        <string>/Users/mcclainje/Documents/Code/auspex/cmd/alerter/main.go</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>AUSPEX_DB_HOST</key>
+        <string>localhost</string>
+        <key>AUSPEX_DB_PORT</key>
+        <string>5432</string>
+        <key>AUSPEX_DB_NAME</key>
+        <string>auspexdb</string>
+        <key>AUSPEX_DB_USER</key>
+        <string>auspex</string>
+        <key>AUSPEX_DB_PASSWORD</key>
+        <string>YourSecurePassword123!</string>
+        <key>AUSPEX_ALERTER_ENABLED</key>
+        <string>true</string>
+        <key>AUSPEX_ALERTER_CHECK_INTERVAL_SECONDS</key>
+        <string>30</string>
+        <key>AUSPEX_ALERTER_DEDUP_WINDOW_MINUTES</key>
+        <string>15</string>
+        <key>AUSPEX_SMTP_HOST</key>
+        <string>smtp.gmail.com</string>
+        <key>AUSPEX_SMTP_PORT</key>
+        <string>587</string>
+        <key>AUSPEX_SMTP_USER</key>
+        <string>your-email@gmail.com</string>
+        <key>AUSPEX_SMTP_PASSWORD</key>
+        <string>your-app-password</string>
+        <key>AUSPEX_SMTP_FROM</key>
+        <string>auspex-alerts@yourdomain.com</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/Users/mcclainje/Documents/Code/auspex/logs/alerter.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/mcclainje/Documents/Code/auspex/logs/alerter.err</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+</dict>
+</plist>
+```
+
+**Note:** The alerter service is optional. Only configure if you've set up alerting (see [ALERTING-SETUP.md](ALERTING-SETUP.md)).
+
+**Load services (without alerter):**
 ```bash
 launchctl load ~/Library/LaunchAgents/com.auspex.poller.plist
 launchctl load ~/Library/LaunchAgents/com.auspex.api.plist
+```
+
+**Load services (with alerter):**
+```bash
+launchctl load ~/Library/LaunchAgents/com.auspex.poller.plist
+launchctl load ~/Library/LaunchAgents/com.auspex.api.plist
+launchctl load ~/Library/LaunchAgents/com.auspex.alerter.plist
 ```
 
 **Manage services:**
@@ -324,12 +391,53 @@ RestartSec=10
 WantedBy=multi-user.target
 ```
 
-**Enable and start:**
+**Alerter service (`/etc/systemd/system/auspex-alerter.service`):**
+```ini
+[Unit]
+Description=Auspex Alerting Engine
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=auspex
+WorkingDirectory=/opt/auspex
+Environment="AUSPEX_DB_HOST=localhost"
+Environment="AUSPEX_DB_PORT=5432"
+Environment="AUSPEX_DB_NAME=auspexdb"
+Environment="AUSPEX_DB_USER=auspex"
+Environment="AUSPEX_DB_PASSWORD=YourSecurePassword123!"
+Environment="AUSPEX_ALERTER_ENABLED=true"
+Environment="AUSPEX_ALERTER_CHECK_INTERVAL_SECONDS=30"
+Environment="AUSPEX_ALERTER_DEDUP_WINDOW_MINUTES=15"
+Environment="AUSPEX_SMTP_HOST=smtp.gmail.com"
+Environment="AUSPEX_SMTP_PORT=587"
+Environment="AUSPEX_SMTP_USER=your-email@gmail.com"
+Environment="AUSPEX_SMTP_PASSWORD=your-app-password"
+Environment="AUSPEX_SMTP_FROM=auspex-alerts@yourdomain.com"
+ExecStart=/usr/local/go/bin/go run /opt/auspex/cmd/alerter/main.go
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Note:** The alerter service is optional. Only enable if you've configured alerting (see [ALERTING-SETUP.md](ALERTING-SETUP.md)).
+
+**Enable and start (without alerter):**
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable auspex-poller auspex-api
 sudo systemctl start auspex-poller auspex-api
 sudo systemctl status auspex-poller auspex-api
+```
+
+**Enable and start (with alerter):**
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable auspex-poller auspex-api auspex-alerter
+sudo systemctl start auspex-poller auspex-api auspex-alerter
+sudo systemctl status auspex-poller auspex-api auspex-alerter
 ```
 
 ## Monitoring Recommendations

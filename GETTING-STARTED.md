@@ -9,6 +9,7 @@ Auspex is ready to monitor your SNMP-enabled network devices!
 ✓ PostgreSQL database configured
 ✓ SNMP poller running (polls every 60 seconds)
 ✓ Web API server running on port 8080
+✓ Alerting engine available (see [ALERTING-SETUP.md](ALERTING-SETUP.md))
 ✓ Sample data removed - ready for real targets
 
 ### Access the Dashboard
@@ -212,6 +213,9 @@ ps aux | grep "go run.*poller"
 # Check if API server is running
 ps aux | grep "node.*server.js"
 
+# Check if alerter is running (if configured)
+ps aux | grep "go run.*alerter"
+
 # Check PostgreSQL
 pg_isready
 
@@ -223,7 +227,7 @@ pg_isready
 
 ```bash
 # Find process IDs
-ps aux | grep -E "go run.*poller|node.*server"
+ps aux | grep -E "go run.*poller|go run.*alerter|node.*server"
 
 # Kill processes
 kill <PID>
@@ -246,7 +250,11 @@ cd /Users/mcclainje/Documents/Code/auspex
 export $(cat config/auspex.conf | xargs)
 node webui/server.js
 
-# Terminal 3: Access dashboard
+# Terminal 3: Alerter (optional - see ALERTING-SETUP.md for setup)
+cd /Users/mcclainje/Documents/Code/auspex
+./start-alerter.sh
+
+# Terminal 4: Access dashboard
 open http://localhost:8080
 ```
 
