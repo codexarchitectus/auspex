@@ -50,7 +50,24 @@ Enable device-specific SNMP monitoring with reusable OID groups:
 - Reusable templates across similar devices
 - Professional-grade SNMP monitoring
 
-#### 2. **Splunk HEC Integration** ([implementation plan](SPLUNK-HEC-IMPLEMENTATION-PLAN.md))
+#### 2. **ICMP Ping Polling** ([detailed proposal](docs/ICMP-POLLING-PROPOSAL.md))
+**Status:** Proposed
+**Effort:** 3 weeks
+**Priority:** High
+
+Add ICMP (ping) as an alternative polling method per target:
+- Poll type selector per target (SNMP, ICMP, or both)
+- Reuse existing poll_results schema
+- Faster, lighter polling for simple reachability
+- Monitor devices without SNMP enabled
+
+**Benefits:**
+- Broader device support (IoT, printers, etc.)
+- Simpler setup (no SNMP credentials needed)
+- Faster polling (ICMP lighter than SNMP)
+- Redundancy option (poll both SNMP + ICMP)
+
+#### 3. **Splunk HEC Integration** ([implementation plan](SPLUNK-HEC-IMPLEMENTATION-PLAN.md))
 **Status:** Planned
 **Effort:** 2-3 weeks
 **Priority:** Medium-High
@@ -199,6 +216,7 @@ Want to help build these features?
 
 **Planning Documents:**
 - [SNMP MIB Database Proposal](docs/SNMP-MIB-DATABASE-PROPOSAL.md)
+- [ICMP Ping Polling Proposal](docs/ICMP-POLLING-PROPOSAL.md)
 - [Splunk HEC Implementation Plan](SPLUNK-HEC-IMPLEMENTATION-PLAN.md)
 
 **Community:**
